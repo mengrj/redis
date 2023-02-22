@@ -1647,24 +1647,29 @@ int RM_SetCommandInfo(RedisModuleCommand *command, const RedisModuleCommandInfo 
             cmd->key_specs[j].flags = moduleConvertKeySpecsFlags(spec->flags, 1);
             switch (spec->begin_search_type) {
             case REDISMODULE_KSPEC_BS_UNKNOWN:
+                // INSTRUMENT_BB
                 cmd->key_specs[j].begin_search_type = KSPEC_BS_UNKNOWN;
                 break;
             case REDISMODULE_KSPEC_BS_INDEX:
+                // INSTRUMENT_BB
                 cmd->key_specs[j].begin_search_type = KSPEC_BS_INDEX;
                 cmd->key_specs[j].bs.index.pos = spec->bs.index.pos;
                 break;
             case REDISMODULE_KSPEC_BS_KEYWORD:
+                // INSTRUMENT_BB
                 cmd->key_specs[j].begin_search_type = KSPEC_BS_KEYWORD;
                 cmd->key_specs[j].bs.keyword.keyword = zstrdup(spec->bs.keyword.keyword);
                 cmd->key_specs[j].bs.keyword.startfrom = spec->bs.keyword.startfrom;
                 break;
             default:
+                // INSTRUMENT_BB
                 /* Can't happen; stopped in moduleValidateCommandInfo(). */
                 serverPanic("Unknown begin_search_type");
             }
 
             switch (spec->find_keys_type) {
             case REDISMODULE_KSPEC_FK_OMITTED:
+                // INSTRUMENT_BB
                 /* Omitted field is shorthand to say that it's a single key. */
                 cmd->key_specs[j].find_keys_type = KSPEC_FK_RANGE;
                 cmd->key_specs[j].fk.range.lastkey = 0;
@@ -1672,21 +1677,25 @@ int RM_SetCommandInfo(RedisModuleCommand *command, const RedisModuleCommandInfo 
                 cmd->key_specs[j].fk.range.limit = 0;
                 break;
             case REDISMODULE_KSPEC_FK_UNKNOWN:
+                // INSTRUMENT_BB
                 cmd->key_specs[j].find_keys_type = KSPEC_FK_UNKNOWN;
                 break;
             case REDISMODULE_KSPEC_FK_RANGE:
+                // INSTRUMENT_BB
                 cmd->key_specs[j].find_keys_type = KSPEC_FK_RANGE;
                 cmd->key_specs[j].fk.range.lastkey = spec->fk.range.lastkey;
                 cmd->key_specs[j].fk.range.keystep = spec->fk.range.keystep;
                 cmd->key_specs[j].fk.range.limit = spec->fk.range.limit;
                 break;
             case REDISMODULE_KSPEC_FK_KEYNUM:
+                // INSTRUMENT_BB
                 cmd->key_specs[j].find_keys_type = KSPEC_FK_KEYNUM;
                 cmd->key_specs[j].fk.keynum.keynumidx = spec->fk.keynum.keynumidx;
                 cmd->key_specs[j].fk.keynum.firstkey = spec->fk.keynum.firstkey;
                 cmd->key_specs[j].fk.keynum.keystep = spec->fk.keynum.keystep;
                 break;
             default:
+                // INSTRUMENT_BB
                 /* Can't happen; stopped in moduleValidateCommandInfo(). */
                 serverPanic("Unknown find_keys_type");
             }
@@ -1779,6 +1788,7 @@ static int moduleValidateCommandInfo(const RedisModuleCommandInfo *info) {
             case REDISMODULE_KSPEC_BS_INDEX: break;
             case REDISMODULE_KSPEC_BS_KEYWORD:
                 if (spec->bs.keyword.keyword == NULL) {
+                    // INSTRUMENT_BB
                     serverLog(LL_WARNING,
                               "Invalid command info: key_specs[%zd].bs.keyword.keyword "
                               "required when begin_search_type is KEYWORD", j);
@@ -1786,6 +1796,7 @@ static int moduleValidateCommandInfo(const RedisModuleCommandInfo *info) {
                 }
                 break;
             default:
+                // INSTRUMENT_BB
                 serverLog(LL_WARNING,
                           "Invalid command info: key_specs[%zd].begin_search_type: "
                           "Invalid value %d", j, spec->begin_search_type);
@@ -1794,11 +1805,20 @@ static int moduleValidateCommandInfo(const RedisModuleCommandInfo *info) {
 
             /* Validate find_keys_type. */
             switch (spec->find_keys_type) {
-            case REDISMODULE_KSPEC_FK_OMITTED: break; /* short for RANGE {0,1,0} */
-            case REDISMODULE_KSPEC_FK_UNKNOWN: break;
-            case REDISMODULE_KSPEC_FK_RANGE: break;
-            case REDISMODULE_KSPEC_FK_KEYNUM: break;
+            case REDISMODULE_KSPEC_FK_OMITTED: 
+                // INSTRUMENT_BB
+                break; /* short for RANGE {0,1,0} */
+            case REDISMODULE_KSPEC_FK_UNKNOWN: 
+                // INSTRUMENT_BB
+                break;
+            case REDISMODULE_KSPEC_FK_RANGE: 
+                // INSTRUMENT_BB
+                break;
+            case REDISMODULE_KSPEC_FK_KEYNUM: 
+                // INSTRUMENT_BB
+                break;
             default:
+                // INSTRUMENT_BB
                 serverLog(LL_WARNING,
                           "Invalid command info: key_specs[%zd].find_keys_type: "
                           "Invalid value %d", j, spec->find_keys_type);
@@ -3592,14 +3612,18 @@ int RM_GetContextFlags(RedisModuleCtx *ctx) {
         if (server.repl_state == REPL_STATE_CONNECT ||
             server.repl_state == REPL_STATE_CONNECTING)
         {
+            // INSTRUMENT_BB
             flags |= REDISMODULE_CTX_FLAGS_REPLICA_IS_CONNECTING;
         } else if (server.repl_state == REPL_STATE_TRANSFER) {
+            // INSTRUMENT_BB
             flags |= REDISMODULE_CTX_FLAGS_REPLICA_IS_TRANSFERRING;
         } else if (server.repl_state == REPL_STATE_CONNECTED) {
+            // INSTRUMENT_BB
             flags |= REDISMODULE_CTX_FLAGS_REPLICA_IS_ONLINE;
         }
 
         if (server.repl_state != REPL_STATE_CONNECTED)
+            // INSTRUMENT_BB
             flags |= REDISMODULE_CTX_FLAGS_REPLICA_IS_STALE;
     }
 
