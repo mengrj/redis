@@ -3975,7 +3975,7 @@ int processCommand(client *c) {
         if (listLength(server.ready_keys))
             handleClientsBlockedOnKeys();
     }
-    // INSTRUMENT_BB
+
     return C_OK;
 }
 

@@ -556,7 +556,6 @@ void replicationFeedStreamFromMasterStream(char *buf, size_t buflen) {
     }
 }
 
-// INSTRUMENT_FUNC
 void replicationFeedMonitors(client *c, list *monitors, int dictid, robj **argv, int argc) {
     /* Fast path to return if the monitors list is empty or the server is in loading. */
     if (monitors == NULL || listLength(monitors) == 0 || server.loading) return;
