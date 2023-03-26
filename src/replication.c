@@ -3860,7 +3860,7 @@ int shouldStartChildReplication(int *mincapa_out, int *req_out) {
             return 1;
         }
     }
-    // INSTRUMENT_BB
+
     return 0;
 }
 
