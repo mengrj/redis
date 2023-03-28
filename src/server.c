@@ -6802,10 +6802,9 @@ int main(int argc, char **argv) {
 
     printf(">>> starting checking sanitizer\n");
 
-	// Inject error
-	char *s = malloc(100);
-    free(s);
-    strcpy(s, "Hello world!");
+	int x[100];
+    x[100] = 0;
+
     printf(">>> finished checking sanitizer\n");
 
 #ifdef REDIS_TEST
