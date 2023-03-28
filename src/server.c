@@ -61,6 +61,9 @@
 #include <locale.h>
 #include <sys/socket.h>
 #include <sys/resource.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef __linux__
 #include <sys/mman.h>
@@ -6796,6 +6799,14 @@ int main(int argc, char **argv) {
     struct timeval tv;
     int j;
     char config_from_stdin = 0;
+
+    printf(">>> starting checking sanitizer\n");
+
+	// Inject error
+	char *s = malloc(100);
+    free(s);
+    strcpy(s, "Hello world!");
+    printf(">>> finished checking sanitizer\n");
 
 #ifdef REDIS_TEST
     if (argc >= 3 && !strcasecmp(argv[1], "test")) {
