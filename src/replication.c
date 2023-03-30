@@ -109,7 +109,6 @@ int bg_unlink(const char *filename) {
 }
 
 /* ---------------------------------- MASTER -------------------------------- */
-// INSTRUMENT_FUNC
 void createReplicationBacklog(void) {
     serverAssert(server.repl_backlog == NULL);
     server.repl_backlog = zmalloc(sizeof(replBacklog));
@@ -128,7 +127,6 @@ void createReplicationBacklog(void) {
  * so that it contains the same data as the previous one (possibly less data,
  * but the most recent bytes, or the same data and more free space in case the
  * buffer is enlarged). */
-// INSTRUMENT_FUNC
 void resizeReplicationBacklog(void) {
     if (server.repl_backlog_size < CONFIG_REPL_BACKLOG_MIN_SIZE)
         server.repl_backlog_size = CONFIG_REPL_BACKLOG_MIN_SIZE;
@@ -136,7 +134,6 @@ void resizeReplicationBacklog(void) {
         incrementalTrimReplicationBacklog(REPL_BACKLOG_TRIM_BLOCKS_PER_CALL);
 }
 
-// INSTRUMENT_FUNC
 void freeReplicationBacklog(void) {
     serverAssert(listLength(server.slaves) == 0);
     if (server.repl_backlog == NULL) return;
@@ -191,7 +188,6 @@ void rebaseReplicationBuffer(long long base_repl_offset) {
     }
 }
 
-// INSTRUMENT_FUNC
 void resetReplicationBuffer(void) {
     server.repl_buffer_mem = 0;
     server.repl_buffer_blocks = listCreate();
@@ -230,7 +226,6 @@ int prepareReplicasToWrite(void) {
 
 /* Wrapper for feedReplicationBuffer() that takes Redis string objects
  * as input. */
-// INSTRUMENT_FUNC
 void feedReplicationBufferWithObject(robj *o) {
     char llstr[LONG_STR_SIZE];
     void *p;
@@ -600,7 +595,6 @@ void replicationFeedMonitors(client *c, list *monitors, int dictid, robj **argv,
 
 /* Feed the slave 'c' with the replication backlog starting from the
  * specified 'offset' up to the end of the backlog. */
-// INSTRUMENT_FUNC
 long long addReplyReplicationBacklog(client *c, long long offset) {
     long long skip;
 
@@ -692,7 +686,6 @@ long long getPsyncInitialOffset(void) {
  * Normally this function should be called immediately after a successful
  * BGSAVE for replication was started, or when there is one already in
  * progress that we attached our slave to. */
-// INSTRUMENT_FUNC
 int replicationSetupSlaveForFullResync(client *slave, long long offset) {
     char buf[128];
     int buflen;
@@ -1047,7 +1040,6 @@ void syncCommand(client *c) {
         /* Ok a background save is in progress. Let's check if it is a good
          * one for replication, i.e. if there is another slave that is
          * registering differences since the server forked to save. */
-        // INSTRUMENT_BB
         client *slave;
         listNode *ln;
         listIter li;
@@ -1092,7 +1084,6 @@ void syncCommand(client *c) {
 
     /* CASE 3: There is no BGSAVE is in progress. */
     } else {
-        // INSTRUMENT_BB
         if (server.repl_diskless_sync && (c->slave_capa & SLAVE_CAPA_EOF) &&
             server.repl_diskless_sync_delay)
         {

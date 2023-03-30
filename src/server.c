@@ -3609,7 +3609,6 @@ int processCommand(client *c) {
     /* Handle possible security attacks. */
     if (!strcasecmp(c->argv[0]->ptr,"host:") || !strcasecmp(c->argv[0]->ptr,"post")) {
         securityWarningCommand(c);
-        // INSTRUMENT_BB
         return C_ERR;
     }
 
@@ -3620,7 +3619,6 @@ int processCommand(client *c) {
     {
         c->bpop.timeout = 0;
         blockClient(c,BLOCKED_POSTPONE);
-        // INSTRUMENT_BB
         return C_OK;
     }
 
@@ -3630,12 +3628,10 @@ int processCommand(client *c) {
     sds err;
     if (!commandCheckExistence(c, &err)) {
         rejectCommandSds(c, err);
-        // INSTRUMENT_BB
         return C_OK;
     }
     if (!commandCheckArity(c, &err)) {
         rejectCommandSds(c, err);
-        // INSTRUMENT_BB
         return C_OK;
     }
 
@@ -3649,7 +3645,6 @@ int processCommand(client *c) {
                                   "in the configuration file, and then restart the server.",
                                   c->cmd->proc == debugCommand ? "DEBUG" : "MODULE",
                                   c->cmd->proc == debugCommand ? "enable-debug-command" : "enable-module-command");
-            // INSTRUMENT_BB
             return C_OK;
 
         }
@@ -3690,14 +3685,12 @@ int processCommand(client *c) {
          * non-authenticated state. */
         if (!(c->cmd->flags & CMD_NO_AUTH)) {
             rejectCommand(c,shared.noautherr);
-            // INSTRUMENT_BB
             return C_OK;
         }
     }
 
     if (c->flags & CLIENT_MULTI && c->cmd->flags & CMD_NO_MULTI) {
         rejectCommandFormat(c,"Command not allowed inside a transaction");
-        // INSTRUMENT_BB
         return C_OK;
     }
 
@@ -3729,7 +3722,7 @@ int processCommand(client *c) {
             rejectCommandFormat(c, "no permission");
             break;
         }
-        // INSTRUMENT_BB
+
         return C_OK;
     }
 
@@ -3753,7 +3746,6 @@ int processCommand(client *c) {
             }
             clusterRedirectClient(c,n,c->slot,error_code);
             c->cmd->rejected_calls++;
-            // INSTRUMENT_BB
             return C_OK;
         }
     }
@@ -3764,7 +3756,6 @@ int processCommand(client *c) {
     evictClients();
     if (server.current_client == NULL) {
         /* If we evicted ourself then abort processing the command */
-        // INSTRUMENT_BB
         return C_ERR;
     }
 
@@ -3805,7 +3796,6 @@ int processCommand(client *c) {
 
         if (out_of_memory && reject_cmd_on_oom) {
             rejectCommand(c, shared.oomerr);
-            // INSTRUMENT_BB
             return C_OK;
         }
 
@@ -3845,7 +3835,6 @@ int processCommand(client *c) {
             /* remove the newline since rejectCommandSds adds it. */
             sdssubstr(err, 0, sdslen(err)-2);
             rejectCommandSds(c, err);
-            // INSTRUMENT_BB
             return C_OK;
         }
     }
@@ -3854,7 +3843,6 @@ int processCommand(client *c) {
      * user configured the min-slaves-to-write option. */
     if (is_write_command && !checkGoodReplicasStatus()) {
         rejectCommand(c, shared.noreplicaserr);
-        // INSTRUMENT_BB
         return C_OK;
     }
 
@@ -3865,7 +3853,6 @@ int processCommand(client *c) {
         is_write_command)
     {
         rejectCommand(c, shared.roslaveerr);
-        // INSTRUMENT_BB
         return C_OK;
     }
 
@@ -3885,7 +3872,6 @@ int processCommand(client *c) {
             "Can't execute '%s': only (P|S)SUBSCRIBE / "
             "(P|S)UNSUBSCRIBE / PING / QUIT / RESET are allowed in this context",
             c->cmd->fullname);
-        // INSTRUMENT_BB
         return C_OK;
     }
 
@@ -3897,7 +3883,6 @@ int processCommand(client *c) {
         is_denystale_command)
     {
         rejectCommand(c, shared.masterdownerr);
-        // INSTRUMENT_BB
         return C_OK;
     }
 
@@ -3905,14 +3890,12 @@ int processCommand(client *c) {
      * CMD_LOADING flag. */
     if (server.loading && !server.async_loading && is_denyloading_command) {
         rejectCommand(c, shared.loadingerr);
-        // INSTRUMENT_BB
         return C_OK;
     }
 
     /* During async-loading, block certain commands. */
     if (server.async_loading && is_deny_async_loading_command) {
         rejectCommand(c,shared.loadingerr);
-        // INSTRUMENT_BB
         return C_OK;
     }
 
@@ -3933,7 +3916,6 @@ int processCommand(client *c) {
         } else {
             rejectCommand(c, shared.slowscripterr);
         }
-        // INSTRUMENT_BB
         return C_OK;
     }
 
@@ -3942,7 +3924,6 @@ int processCommand(client *c) {
      * from which replicas are exempt. */
     if ((c->flags & CLIENT_SLAVE) && (is_may_replicate_command || is_write_command || is_read_command)) {
         rejectCommandFormat(c, "Replica can't interact with the keyspace");
-        // INSTRUMENT_BB
         return C_OK;
     }
 
@@ -3954,7 +3935,6 @@ int processCommand(client *c) {
     {
         c->bpop.timeout = 0;
         blockClient(c,BLOCKED_POSTPONE);
-        // INSTRUMENT_BB
         return C_OK;       
     }
 
