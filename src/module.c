@@ -1896,15 +1896,20 @@ int RM_GetContextFlags(RedisModuleCtx *ctx) {
         if (server.repl_state == REPL_STATE_CONNECT ||
             server.repl_state == REPL_STATE_CONNECTING)
         {
+            // INSTRUMENT_BB
             flags |= REDISMODULE_CTX_FLAGS_REPLICA_IS_CONNECTING;
         } else if (server.repl_state == REPL_STATE_TRANSFER) {
+            // INSTRUMENT_BB
             flags |= REDISMODULE_CTX_FLAGS_REPLICA_IS_TRANSFERRING;
         } else if (server.repl_state == REPL_STATE_CONNECTED) {
+            // INSTRUMENT_BB
             flags |= REDISMODULE_CTX_FLAGS_REPLICA_IS_ONLINE;
         }
 
-        if (server.repl_state != REPL_STATE_CONNECTED)
+        if (server.repl_state != REPL_STATE_CONNECTED){
+            // INSTRUMENT_BB
             flags |= REDISMODULE_CTX_FLAGS_REPLICA_IS_STALE;
+        }
     }
 
     /* OOM flag. */

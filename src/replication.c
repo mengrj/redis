@@ -125,6 +125,7 @@ void freeReplicationBacklog(void) {
  * This function also increments the global replication offset stored at
  * server.master_repl_offset, because there is no case where we want to feed
  * the backlog without incrementing the offset. */
+// INSTRUMENT_FUNC
 void feedReplicationBacklog(void *ptr, size_t len) {
     unsigned char *p = ptr;
 
@@ -172,6 +173,7 @@ void feedReplicationBacklogWithObject(robj *o) {
  * the commands received by our clients in order to create the replication
  * stream. Instead if the instance is a slave and has sub-slaves attached,
  * we use replicationFeedSlavesFromMaster() */
+// INSTRUMENT_FUNC
 void replicationFeedSlaves(list *slaves, int dictid, robj **argv, int argc) {
     listNode *ln;
     listIter li;
@@ -640,6 +642,7 @@ void syncCommand(client *c) {
     /* Refuse SYNC requests if we are a slave but the link with our master
      * is not ok... */
     if (server.masterhost && server.repl_state != REPL_STATE_CONNECTED) {
+        // INSTRUMENT_BB
         addReplySds(c,sdsnew("-NOMASTERLINK Can't SYNC while not connected with my master\r\n"));
         return;
     }
@@ -744,6 +747,7 @@ void syncCommand(client *c) {
         /* There is an RDB child process but it is writing directly to
          * children sockets. We need to wait for the next BGSAVE
          * in order to synchronize. */
+        // INSTRUMENT_BB
         serverLog(LL_NOTICE,"Current BGSAVE has socket target. Waiting for next BGSAVE for SYNC");
 
     /* CASE 3: There is no BGSAVE is progress. */
@@ -1221,6 +1225,7 @@ void shiftReplicationId(void) {
 
 /* Returns 1 if the given replication state is a handshake state,
  * 0 otherwise. */
+// INSTRUMENT_FUNC
 int slaveIsInHandshakeState(void) {
     return server.repl_state >= REPL_STATE_RECEIVE_PONG &&
            server.repl_state <= REPL_STATE_RECEIVE_PSYNC;
@@ -1653,6 +1658,7 @@ void readSyncBulkPayload(connection *conn) {
 
     /* Final setup of the connected slave <- master link */
     replicationCreateMasterClient(server.repl_transfer_s,rsi.repl_stream_db);
+    // INSTRUMENT_BB
     server.repl_state = REPL_STATE_CONNECTED;
     server.repl_down_since = 0;
 
@@ -1976,6 +1982,7 @@ void syncWithMaster(connection *conn) {
     /* If this event fired after the user turned the instance into a master
      * with SLAVEOF NO ONE we must just return ASAP. */
     if (server.repl_state == REPL_STATE_NONE) {
+        // INSTRUMENT_BB
         connClose(conn);
         return;
     }
@@ -1983,6 +1990,7 @@ void syncWithMaster(connection *conn) {
     /* Check for errors in the socket: after a non blocking connect() we
      * may find that the socket is in error state. */
     if (connGetState(conn) != CONN_STATE_CONNECTED) {
+        // INSTRUMENT_BB
         serverLog(LL_WARNING,"Error condition on socket for SYNC: %s",
                 connGetLastError(conn));
         goto error;
@@ -1990,6 +1998,7 @@ void syncWithMaster(connection *conn) {
 
     /* Send a PING to check the master is able to reply without errors. */
     if (server.repl_state == REPL_STATE_CONNECTING) {
+        // INSTRUMENT_BB
         serverLog(LL_NOTICE,"Non blocking connect for SYNC fired the event.");
         /* Delete the writable event so that the readable event remains
          * registered and we can wait for the PONG reply. */
@@ -2005,6 +2014,7 @@ void syncWithMaster(connection *conn) {
 
     /* Receive the PONG command. */
     if (server.repl_state == REPL_STATE_RECEIVE_PONG) {
+        // INSTRUMENT_BB
         err = sendSynchronousCommand(SYNC_CMD_READ,conn,NULL);
 
         /* We accept only two replies as valid, a positive +PONG reply
@@ -2029,6 +2039,7 @@ void syncWithMaster(connection *conn) {
 
     /* AUTH with the master if required. */
     if (server.repl_state == REPL_STATE_SEND_AUTH) {
+        // INSTRUMENT_BB
         if (server.masteruser && server.masterauth) {
             err = sendSynchronousCommand(SYNC_CMD_WRITE,conn,"AUTH",
                                          server.masteruser,server.masterauth,NULL);
@@ -2047,6 +2058,7 @@ void syncWithMaster(connection *conn) {
 
     /* Receive AUTH reply. */
     if (server.repl_state == REPL_STATE_RECEIVE_AUTH) {
+        // INSTRUMENT_BB
         err = sendSynchronousCommand(SYNC_CMD_READ,conn,NULL);
         if (err[0] == '-') {
             serverLog(LL_WARNING,"Unable to AUTH to MASTER: %s",err);
@@ -2060,6 +2072,7 @@ void syncWithMaster(connection *conn) {
     /* Set the slave port, so that Master's INFO command can list the
      * slave listening port correctly. */
     if (server.repl_state == REPL_STATE_SEND_PORT) {
+        // INSTRUMENT_BB
         int port;
         if (server.slave_announce_port) port = server.slave_announce_port;
         else if (server.tls_replication && server.tls_port) port = server.tls_port;
@@ -2076,6 +2089,7 @@ void syncWithMaster(connection *conn) {
 
     /* Receive REPLCONF listening-port reply. */
     if (server.repl_state == REPL_STATE_RECEIVE_PORT) {
+        // INSTRUMENT_BB
         err = sendSynchronousCommand(SYNC_CMD_READ,conn,NULL);
         /* Ignore the error if any, not all the Redis versions support
          * REPLCONF listening-port. */
@@ -2091,12 +2105,14 @@ void syncWithMaster(connection *conn) {
     if (server.repl_state == REPL_STATE_SEND_IP &&
         server.slave_announce_ip == NULL)
     {
+        // INSTRUMENT_BB
             server.repl_state = REPL_STATE_SEND_CAPA;
     }
 
     /* Set the slave ip, so that Master's INFO command can list the
      * slave IP address port correctly in case of port forwarding or NAT. */
     if (server.repl_state == REPL_STATE_SEND_IP) {
+        // INSTRUMENT_BB
         err = sendSynchronousCommand(SYNC_CMD_WRITE,conn,"REPLCONF",
                 "ip-address",server.slave_announce_ip, NULL);
         if (err) goto write_error;
@@ -2107,6 +2123,7 @@ void syncWithMaster(connection *conn) {
 
     /* Receive REPLCONF ip-address reply. */
     if (server.repl_state == REPL_STATE_RECEIVE_IP) {
+        // INSTRUMENT_BB
         err = sendSynchronousCommand(SYNC_CMD_READ,conn,NULL);
         /* Ignore the error if any, not all the Redis versions support
          * REPLCONF listening-port. */
@@ -2125,6 +2142,7 @@ void syncWithMaster(connection *conn) {
      *
      * The master will ignore capabilities it does not understand. */
     if (server.repl_state == REPL_STATE_SEND_CAPA) {
+        // INSTRUMENT_BB
         err = sendSynchronousCommand(SYNC_CMD_WRITE,conn,"REPLCONF",
                 "capa","eof","capa","psync2",NULL);
         if (err) goto write_error;
@@ -2135,6 +2153,7 @@ void syncWithMaster(connection *conn) {
 
     /* Receive CAPA reply. */
     if (server.repl_state == REPL_STATE_RECEIVE_CAPA) {
+        // INSTRUMENT_BB
         err = sendSynchronousCommand(SYNC_CMD_READ,conn,NULL);
         /* Ignore the error if any, not all the Redis versions support
          * REPLCONF capa. */
@@ -2152,6 +2171,7 @@ void syncWithMaster(connection *conn) {
      * and the global offset, to try a partial resync at the next
      * reconnection attempt. */
     if (server.repl_state == REPL_STATE_SEND_PSYNC) {
+        // INSTRUMENT_BB
         if (slaveTryPartialResynchronization(conn,0) == PSYNC_WRITE_ERROR) {
             err = sdsnew("Write error sending the PSYNC command.");
             goto write_error;
@@ -2162,6 +2182,7 @@ void syncWithMaster(connection *conn) {
 
     /* If reached this point, we should be in REPL_STATE_RECEIVE_PSYNC. */
     if (server.repl_state != REPL_STATE_RECEIVE_PSYNC) {
+        // INSTRUMENT_BB
         serverLog(LL_WARNING,"syncWithMaster(): state machine error, "
                              "state should be RECEIVE_PSYNC but is %d",
                              server.repl_state);
@@ -2240,6 +2261,7 @@ void syncWithMaster(connection *conn) {
     return;
 
 error:
+    // INSTRUMENT_BB
     if (dfd != -1) close(dfd);
     connClose(conn);
     server.repl_transfer_s = NULL;
@@ -2309,6 +2331,7 @@ void replicationAbortSyncTransfer(void) {
  * Otherwise zero is returned and no operation is perforemd at all. */
 int cancelReplicationHandshake(void) {
     if (server.repl_state == REPL_STATE_TRANSFER) {
+        // INSTRUMENT_BB
         replicationAbortSyncTransfer();
         server.repl_state = REPL_STATE_CONNECT;
     } else if (server.repl_state == REPL_STATE_CONNECTING ||
@@ -2523,12 +2546,30 @@ void roleCommand(client *c) {
             slavestate = "handshake";
         } else {
             switch(server.repl_state) {
-            case REPL_STATE_NONE: slavestate = "none"; break;
-            case REPL_STATE_CONNECT: slavestate = "connect"; break;
-            case REPL_STATE_CONNECTING: slavestate = "connecting"; break;
-            case REPL_STATE_TRANSFER: slavestate = "sync"; break;
-            case REPL_STATE_CONNECTED: slavestate = "connected"; break;
-            default: slavestate = "unknown"; break;
+            case REPL_STATE_NONE:
+                // INSTRUMENT_BB
+                slavestate = "none"; 
+                break;
+            case REPL_STATE_CONNECT: 
+                // INSTRUMENT_BB
+                slavestate = "connect"; 
+                break;
+            case REPL_STATE_CONNECTING: 
+                // INSTRUMENT_BB
+                slavestate = "connecting"; 
+                break;
+            case REPL_STATE_TRANSFER: 
+                // INSTRUMENT_BB
+                slavestate = "sync"; 
+                break;
+            case REPL_STATE_CONNECTED: 
+                // INSTRUMENT_BB
+                slavestate = "connected"; 
+                break;
+            default: 
+                // INSTRUMENT_BB
+                slavestate = "unknown"; 
+                break;
             }
         }
         addReplyBulkCString(c,slavestate);
@@ -2659,6 +2700,7 @@ void replicationResurrectCachedMaster(connection *conn) {
     server.master->flags &= ~(CLIENT_CLOSE_AFTER_REPLY|CLIENT_CLOSE_ASAP);
     server.master->authenticated = 1;
     server.master->lastinteraction = server.unixtime;
+    // INSTRUMENT_BB
     server.repl_state = REPL_STATE_CONNECTED;
     server.repl_down_since = 0;
 
@@ -2953,6 +2995,7 @@ void replicationCron(void) {
          slaveIsInHandshakeState()) &&
          (time(NULL)-server.repl_transfer_lastio) > server.repl_timeout)
     {
+        // INSTRUMENT_BB
         serverLog(LL_WARNING,"Timeout connecting to the MASTER...");
         cancelReplicationHandshake();
     }
@@ -2961,6 +3004,7 @@ void replicationCron(void) {
     if (server.masterhost && server.repl_state == REPL_STATE_TRANSFER &&
         (time(NULL)-server.repl_transfer_lastio) > server.repl_timeout)
     {
+        // INSTRUMENT_BB
         serverLog(LL_WARNING,"Timeout receiving bulk data from MASTER... If the problem persists try to set the 'repl-timeout' parameter in redis.conf to a larger value.");
         cancelReplicationHandshake();
     }
@@ -2969,12 +3013,14 @@ void replicationCron(void) {
     if (server.masterhost && server.repl_state == REPL_STATE_CONNECTED &&
         (time(NULL)-server.master->lastinteraction) > server.repl_timeout)
     {
+        // INSTRUMENT_BB
         serverLog(LL_WARNING,"MASTER timeout: no data nor PING received...");
         freeClient(server.master);
     }
 
     /* Check if we should connect to a MASTER */
     if (server.repl_state == REPL_STATE_CONNECT) {
+        // INSTRUMENT_BB
         serverLog(LL_NOTICE,"Connecting to MASTER %s:%d",
             server.masterhost, server.masterport);
         if (connectWithMaster() == C_OK) {
@@ -2987,6 +3033,7 @@ void replicationCron(void) {
      * support PSYNC and replication offsets. */
     if (server.masterhost && server.master &&
         !(server.master->flags & CLIENT_PRE_PSYNC))
+        // INSTRUMENT_BB
         replicationSendAck();
 
     /* If we have attached slaves, PING them from time to time.
