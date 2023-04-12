@@ -3248,6 +3248,7 @@ eoferr:
  *
  * If you pass an 'rsi' structure initialized with RDB_SAVE_INFO_INIT, the
  * loading code will fill the information fields in the structure. */
+// INSTRUMENT_FUNC
 int rdbLoad(char *filename, rdbSaveInfo *rsi, int rdbflags) {
     FILE *fp;
     rio rdb;
