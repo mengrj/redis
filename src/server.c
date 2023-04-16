@@ -3661,6 +3661,7 @@ void call(client *c, int flags) {
  * If there's a transaction is flags it as dirty, and if the command is EXEC,
  * it aborts the transaction.
  * Note: 'reply' is expected to end with \r\n */
+// INSTRUMENT_FUNC
 void rejectCommand(client *c, robj *reply) {
     flagTransaction(c);
     if (c->cmd) c->cmd->rejected_calls++;
@@ -3672,6 +3673,7 @@ void rejectCommand(client *c, robj *reply) {
     }
 }
 
+// INSTRUMENT_FUNC
 void rejectCommandSds(client *c, sds s) {
     flagTransaction(c);
     if (c->cmd) c->cmd->rejected_calls++;
@@ -3684,6 +3686,7 @@ void rejectCommandSds(client *c, sds s) {
     }
 }
 
+// INSTRUMENT_FUNC
 void rejectCommandFormat(client *c, const char *fmt, ...) {
     va_list ap;
     va_start(ap,fmt);
@@ -3939,7 +3942,9 @@ int processCommand(client *c) {
 
         /* performEvictions may flush slave output buffers. This may result
          * in a slave, that may be the active client, to be freed. */
-        if (server.current_client == NULL) return C_ERR;
+        if (server.current_client == NULL) 
+            // INSTRUMENT_BB
+            return C_ERR;
 
         int reject_cmd_on_oom = is_denyoom_command;
         /* If client is in MULTI/EXEC context, queuing may consume an unlimited
